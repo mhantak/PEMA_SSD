@@ -14,11 +14,15 @@ library(dplyr)
 library(broom)
 library(tidyr)
 
-setwd("/Users/Maggie/Dropbox/Mammal_SSD/PEMA_SSD/")
+#setwd("/Users/Maggie/Dropbox/Mammal_SSD/PEMA_SSD/")
+
+#FuTRES PEMA
+#doesn't have same  variables so not sure how to compare....
+pema <- read.csv("https://de.cyverse.org/dl/d/ECECB910-C698-4B00-B275-82C473CC28A0/futres_pema.csv", header = TRUE)
 
 ################################################
 ######## Body mass - without decade and without juvs & with NEON
-pema_nodecade_nojuv_bodymass2 <- read.csv("pema_new_rezone_bodymass_nojuv_rezone_centroids.csv", header = TRUE, stringsAsFactors = FALSE)
+pema_nodecade_nojuv_bodymass <- read.csv("pema_new_rezone_bodymass_nojuv_rezone_centroids.csv", header = TRUE, stringsAsFactors = FALSE)
 pema_nodecade_nojuv_bodymass$season <-factor(pema_nodecade_nojuv_bodymass$season)
 pema_nodecade_nojuv_bodymass$sex <-factor(pema_nodecade_nojuv_bodymass$sex)
 #scaling & centering
@@ -46,12 +50,13 @@ names(Female)[names(Female) == "Mean_BM"] <- "Female_Mean_BM"
 
 BM.sex <- cbind(Male, Female) #Messy
 str(BM.sex)
-names(BM.sex)[names(BM.sex) == "zone...1"] <- "zone"
-names(BM.sex)[names(BM.sex) == "sex...2"] <- "Sex.M"
-names(BM.sex)[names(BM.sex) == "sex...6"] <- "Sex.F"
-names(BM.sex)[names(BM.sex) == "zone.lat...3"] <- "zone.lat"
-BM.sex <-subset (BM.sex, select = -zone...5)
-BM.sex <-subset (BM.sex, select = -zone.lat...7)
+BM.sex <- BM.sex %>%
+  dplyr::select(zone, 
+                zone.lat,
+                sex,
+                Male_Mean_BM,
+                Female_Mean_BM) %>%
+  as.data.frame()
 
 #rensch's rule
 BM.rensch <- lm(log(Male_Mean_BM) ~ log(Female_Mean_BM), data = BM.sex)
@@ -73,6 +78,10 @@ hist(BM.SSD$SSD) # positve when females are large
 abline(v=0, col="red") #most females are larger than males - not huge variation in SSD
 
 #averaging predictor variables 
+CoVT <- pema_nodecade_nojuv_bodymass2 %>%
+  group_by(zone, zone.lat) %>% 
+  dplyr::summarize(CoV_Temp = abs(max(MAT, na.rm=TRUE) - min(MAT, na.rm = TRUE)))
+
 Avg_MAT <- pema_nodecade_nojuv_bodymass2 %>%
   group_by(zone, zone.lat) %>%
   dplyr::summarize(Mean_MAT = mean(MAT, na.rm=TRUE)) 
@@ -85,21 +94,21 @@ Avg_Human_pop_density <- pema_nodecade_nojuv_bodymass2 %>%
   group_by(zone, zone.lat) %>%
   dplyr::summarize(Mean_pop_10km2_log10 = mean(pop_10km2_log10, na.rm=TRUE)) 
 
-ssd_envt_variables_BM <- cbind(BM.SSD, Avg_MAT, Avg_MAP, Avg_Human_pop_density)
+ssd_envt_variables_BM <- cbind(BM.SSD, Avg_MAT, Avg_MAP, Avg_Human_pop_density, CoVT)
 
 str(ssd_envt_variables_BM) #Messy
-names(ssd_envt_variables_BM)[names(ssd_envt_variables_BM) == "zone...1"] <- "zone"
-names(ssd_envt_variables_BM)[names(ssd_envt_variables_BM) == "zone.lat...2"] <- "zone.lat"
-ssd_envt_variables_BM <-subset (ssd_envt_variables_BM, select = -zone...4)
-ssd_envt_variables_BM <-subset (ssd_envt_variables_BM, select = -zone.lat...5)
-ssd_envt_variables_BM <-subset (ssd_envt_variables_BM, select = -zone...7)
-ssd_envt_variables_BM <-subset (ssd_envt_variables_BM, select = -zone.lat...8)
-ssd_envt_variables_BM <-subset (ssd_envt_variables_BM, select = -zone...10)
-ssd_envt_variables_BM <-subset (ssd_envt_variables_BM, select = -zone.lat...11)
-str(ssd_envt_variables_BM)
+ssd_envt_variables_BM <- ssd_envt_variables_BM %>%
+  dplyr::select(zone,
+                zone.lat, 
+                SSD,
+                Mean_MAT,
+                Mean_MAP,
+                Mean_pop_10km2_log10,
+                CoV_Temp) %>%
+  as.data.frame()
 
-BM.mod1 <- lm(SSD ~ Mean_MAT + Mean_MAP + Mean_pop_10km2_log10 + zone.lat, data=ssd_envt_variables_BM)
-summary(BM.mod1) #nothing is sig. 
+BM.mod1 <- lm(SSD ~ Mean_MAT + Mean_MAP + Mean_pop_10km2_log10 + zone.lat + CoV_Temp, data=ssd_envt_variables_BM)
+summary(BM.mod1) #CoV_Temp is marginally sig; but slope is basically 0
 plot(allEffects(BM.mod1))
 
 options(na.action=na.fail)
