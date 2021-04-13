@@ -60,6 +60,16 @@ pema.final <- pema.final %>%
 
 write.csv(pema.final, "pema.for.SSD.csv")
 
+pema.final <- read.csv("https://de.cyverse.org/dl/d/A4DC9C95-9E2E-4241-B7B9-F624CA5CD753/pema.for.SSD.csv", header = TRUE)
+
+#cutoff from https://animaldiversity.org/accounts/Peromyscus_maniculatus/
+pema.cutoff <- pema.final[pema.final$mass >= 10 & pema.final$mass <= 24,]
+pema.cutoff <- pema.cutoff[pema.cutoff$total.length >= 119 & pema.cutoff$total.length <= 222,]
+
+write.csv(pema.cutoff, "pema.trimmed.SSD.csv")
+
+pema.trimmed <- read.csv("https://de.cyverse.org/dl/d/F2F2BD17-82AF-466E-8710-70F0F884C14E/pema.trimmed.SSD.csv", header = TRUE)
+
 #Peromyscus leucopus
 pele <- allMamm[allMamm$scientificName == "Peromyscus leucopus",]
 
@@ -111,3 +121,14 @@ pele.final <- pele.final %>%
   drop_na(head.body.length, log.head.body.length)
 
 write.csv(pele.final, "pele.for.SSD.csv")
+
+pele.final <- read.csv("https://de.cyverse.org/dl/d/316E8813-5F0B-49B4-A2DA-481436D3FAF8/pele.for.SSD.csv", header = TRUE)
+
+#cutoff from https://animaldiversity.org/accounts/Peromyscus_leucopus/
+pele.cutoff <- pele.final[pele.final$mass >= 15 & pele.final$mass <= 25,]
+pele.cutoff <- pele.cutoff[pele.cutoff$total.length >= 150 & pele.cutoff$total.length <= 205,]
+
+write.csv(pele.cutoff, "pele.trimmed.SSD.csv")
+
+pele.trimmed <- read.csv("https://de.cyverse.org/dl/d/1541D138-9A6D-4A56-93A2-CD6C92E7EA07/pele.trimmed.SSD.csv", header = TRUE)
+
